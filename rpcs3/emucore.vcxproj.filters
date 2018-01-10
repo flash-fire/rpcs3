@@ -68,6 +68,9 @@
     </Filter>
     <Filter Include="Emu\GPU\RSX\Overlays">
       <UniqueIdentifier>{7536c5ad-d58f-40a7-96db-74d959fa4c02}</UniqueIdentifier>
+	</Filter>  
+    <Filter Include="Utilities\hardware_breakpoint">
+      <UniqueIdentifier>{9d54d112-0440-44b2-ab6f-5dab86a2c687}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -736,6 +739,18 @@
     </ClCompile>
     <ClCompile Include="Emu\Io\PadHandler.cpp">
       <Filter>Emu\Io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Utilities\hardware_breakpoint\hardware_breakpoint_manager.cpp">
+      <Filter>Utilities\hardware_breakpoint</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Utilities\hardware_breakpoint\linux_hardware_breakpoint_manager.cpp">
+      <Filter>Utilities\hardware_breakpoint</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Utilities\hardware_breakpoint\windows_hardware_breakpoint_manager.cpp">
+      <Filter>Utilities\hardware_breakpoint</Filter>
+    </ClCompile>
+    <ClCompile Include="Emu\RSX\overlays.cpp">
+      <Filter>Emu\GPU\RSX</Filter>
     </ClCompile>
     <ClCompile Include="Emu\Cell\lv2\sys_gpio.cpp">
       <Filter>Emu\Cell\lv2</Filter>
@@ -1407,6 +1422,27 @@
     </ClInclude>
     <ClInclude Include="Emu\Cell\lv2\sys_net.h">
       <Filter>Emu\Cell\lv2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Utilities\hardware_breakpoint\hardware_breakpoint_manager.h">
+      <Filter>Utilities\hardware_breakpoint</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Utilities\hardware_breakpoint\linux_hardware_breakpoint_manager.h">
+      <Filter>Utilities\hardware_breakpoint</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Utilities\hardware_breakpoint\null_hardware_breakpoint_manager.h">
+      <Filter>Utilities\hardware_breakpoint</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Utilities\hardware_breakpoint\windows_hardware_breakpoint_manager.h">
+      <Filter>Utilities\hardware_breakpoint</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Utilities\hardware_breakpoint\hardware_breakpoint_manager_impl.h">
+      <Filter>Utilities\hardware_breakpoint</Filter>
+    </ClInclude>
+    <ClInclude Include="Emu\RSX\overlay_controls.h">
+      <Filter>Emu\GPU\RSX</Filter>
+    </ClInclude>
+    <ClInclude Include="Emu\RSX\overlays.h">
+      <Filter>Emu\GPU\RSX</Filter>
     </ClInclude>
     <ClInclude Include="Emu\Cell\lv2\sys_gpio.h">
       <Filter>Emu\Cell\lv2</Filter>

@@ -179,7 +179,7 @@ public:
 	u64 get_cycles();
 
 	// Get platform-specific thread handle
-	std::uintptr_t get_native_handle() const
+	const std::uintptr_t get_native_handle() const
 	{
 		return m_thread.load();
 	}
