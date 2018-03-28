@@ -772,6 +772,8 @@ void main_window::RepaintToolBarIcons()
 void main_window::OnEmuRun()
 {
 	m_debuggerFrame->EnableButtons(true);
+	m_debuggerFrame->UpdateBreakpointList();
+
 #ifdef _WIN32
 	m_thumb_playPause->setToolTip(tr("Pause emulation"));
 	m_thumb_playPause->setIcon(m_icon_thumb_pause);
@@ -789,6 +791,7 @@ void main_window::OnEmuRun()
 		discord::update_presence(Emu.GetTitleID(), Emu.GetTitle());
 	}
 #endif
+
 }
 
 void main_window::OnEmuResume()
