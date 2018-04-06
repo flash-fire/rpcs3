@@ -1430,7 +1430,7 @@ static LONG exception_handler_impl(PEXCEPTION_POINTERS pExp)
 				break;
 			}
 
-			logs::GENERAL.success("Hardware breakpoint hit at: 0x%08X", accessed_address);
+			LOG_SUCCESS(GENERAL, "Hardware breakpoint hit at: 0x%08X", accessed_address);
 
 			if (!any_hit)
 			{
@@ -1636,7 +1636,7 @@ static void trap_signal_handler(int sig, siginfo_t* info, void* uct)
 		//	break;
 		//}
 
-		//logs::GENERAL.success("Hardware breakpoint hit at: 0x%08X", accessed_address);
+		//LOG_SUCCESS(GENERAL, "Hardware breakpoint hit at: 0x%08X", accessed_address);
 
 		if (!any_hit)
 		{
@@ -1656,7 +1656,7 @@ static void trap_signal_handler(int sig, siginfo_t* info, void* uct)
 			auto handler = breakpoint->get_handler();
 			if (handler != nullptr)
 			{
-				handler(*breakpoint);
+				handler(cpu, *breakpoint);
 			}
 		}
 	}
