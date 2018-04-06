@@ -69,7 +69,7 @@
     <Filter Include="Emu\GPU\RSX\Overlays">
       <UniqueIdentifier>{7536c5ad-d58f-40a7-96db-74d959fa4c02}</UniqueIdentifier>
 	</Filter>  
-    <Filter Include="Utilities\hardware_breakpoint">
+    <Filter Include="Utilities\hw_breakpoint">
       <UniqueIdentifier>{9d54d112-0440-44b2-ab6f-5dab86a2c687}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -740,15 +740,6 @@
     <ClCompile Include="Emu\Io\PadHandler.cpp">
       <Filter>Emu\Io</Filter>
     </ClCompile>
-    <ClCompile Include="..\Utilities\hardware_breakpoint\hardware_breakpoint_manager.cpp">
-      <Filter>Utilities\hardware_breakpoint</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Utilities\hardware_breakpoint\linux_hardware_breakpoint_manager.cpp">
-      <Filter>Utilities\hardware_breakpoint</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Utilities\hardware_breakpoint\windows_hardware_breakpoint_manager.cpp">
-      <Filter>Utilities\hardware_breakpoint</Filter>
-    </ClCompile>
     <ClCompile Include="Emu\RSX\overlays.cpp">
       <Filter>Emu\GPU\RSX</Filter>
     </ClCompile>
@@ -760,6 +751,15 @@
     </ClCompile>
     <ClCompile Include="Emu\RSX\Capture\rsx_capture.cpp">
       <Filter>Emu\GPU\RSX\Capture</Filter>
+	</ClCompile>
+    <ClCompile Include="..\Utilities\hw_breakpoint\hw_breakpoint_manager.cpp">
+      <Filter>Utilities\hw_breakpoint</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Utilities\hw_breakpoint\linux_hw_breakpoint_manager.cpp">
+      <Filter>Utilities\hw_breakpoint</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Utilities\hw_breakpoint\win_hw_breakpoint_manager.cpp">
+      <Filter>Utilities\hw_breakpoint</Filter>
     </ClCompile>
     <ClCompile Include="Emu\RSX\Overlays\overlays.cpp">
       <Filter>Emu\GPU\RSX\Overlays</Filter>
@@ -1423,21 +1423,6 @@
     <ClInclude Include="Emu\Cell\lv2\sys_net.h">
       <Filter>Emu\Cell\lv2</Filter>
     </ClInclude>
-    <ClInclude Include="..\Utilities\hardware_breakpoint\hardware_breakpoint_manager.h">
-      <Filter>Utilities\hardware_breakpoint</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Utilities\hardware_breakpoint\linux_hardware_breakpoint_manager.h">
-      <Filter>Utilities\hardware_breakpoint</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Utilities\hardware_breakpoint\null_hardware_breakpoint_manager.h">
-      <Filter>Utilities\hardware_breakpoint</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Utilities\hardware_breakpoint\windows_hardware_breakpoint_manager.h">
-      <Filter>Utilities\hardware_breakpoint</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Utilities\hardware_breakpoint\hardware_breakpoint_manager_impl.h">
-      <Filter>Utilities\hardware_breakpoint</Filter>
-    </ClInclude>
     <ClInclude Include="Emu\RSX\overlay_controls.h">
       <Filter>Emu\GPU\RSX</Filter>
     </ClInclude>
@@ -1476,6 +1461,21 @@
     </ClInclude>
     <ClInclude Include="Emu\RSX\Capture\rsx_capture.h">
       <Filter>Emu\GPU\RSX\Capture</Filter>
+	</ClInclude>
+    <ClInclude Include="..\Utilities\hw_breakpoint\hw_breakpoint_manager.h">
+      <Filter>Utilities\hw_breakpoint</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Utilities\hw_breakpoint\hw_breakpoint_manager_impl.h">
+      <Filter>Utilities\hw_breakpoint</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Utilities\hw_breakpoint\linux_hw_breakpoint_manager.h">
+      <Filter>Utilities\hw_breakpoint</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Utilities\hw_breakpoint\null_hw_breakpoint_manager.h">
+      <Filter>Utilities\hw_breakpoint</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Utilities\hw_breakpoint\win_hw_breakpoint_manager.h">
+      <Filter>Utilities\hw_breakpoint</Filter>
     </ClInclude>
     <ClInclude Include="Emu\RSX\Overlays\overlay_controls.h">
       <Filter>Emu\GPU\RSX\Overlays</Filter>
