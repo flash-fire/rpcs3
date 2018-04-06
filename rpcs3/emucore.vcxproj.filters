@@ -1482,6 +1482,9 @@
     </ClInclude>
     <ClInclude Include="Emu\RSX\Overlays\overlays.h">
       <Filter>Emu\GPU\RSX\Overlays</Filter>
+	</ClInclude>
+    <ClInclude Include="hw_breakpoint.h">
+      <Filter>Utilities\hw_breakpoint</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
