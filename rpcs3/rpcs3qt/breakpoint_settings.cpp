@@ -38,7 +38,7 @@ QMap<QString, QMap<u32, breakpoint_data>> breakpoint_settings::ReadBreakpoints()
 		for (const QString& addr : addrs)
 		{
 			u32 addr_ = addr.toUInt(nullptr, 16);
-			QString& flags_name = m_bp_settings.value(addr).toString();
+			QString flags_name = m_bp_settings.value(addr).toString();
 			u32 flags = flags_name.section("|", 0, 0).toInt(); // Ignore any | in the name itself.
 			QString name = flags_name.section("|", 1);
 			ret[id][addr_] = { flags, name };
