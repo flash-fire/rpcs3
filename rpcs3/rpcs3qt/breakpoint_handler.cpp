@@ -60,13 +60,19 @@ void breakpoint_handler::RemoveBreakpoint(u32 addr, u32 flags)
 
 void breakpoint_handler::test()
 {
-
 	auto cpu = this->cpu.lock();
 	if (cpu)
 	{
-		u32 addr = 0x8abe9c; // TOCS 2
+		u32 addr;
+
+		if (Emu.GetTitleID().empty())
+			addr = 0x20200000;
+		else
+			addr = 0x8abe9c; // TOCS 2
+
 		auto native_handle = (thread_handle)cpu->get()->get_native_handle();
-		auto handle = hw_breakpoint_manager::set(native_handle, hw_breakpoint_type::read_write, hw_breakpoint_size::size_4, (u64)vm::g_base_addr + addr, nullptr, [this](const cpu_thread* cpu, hw_breakpoint& breakpoint)
+		auto handle = hw_breakpoint_manager::set(native_handle, hw_breakpoint_type::read_write, hw_breakpoint_size::size_4,
+			(u64)vm::g_base_addr + addr, nullptr, [this](const cpu_thread* cpu, hw_breakpoint& breakpoint)
 		{
 			emit BreakpointTriggered(cpu, breakpoint.get_address());
 		});
