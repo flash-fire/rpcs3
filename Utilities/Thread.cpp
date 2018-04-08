@@ -32,6 +32,9 @@
 #include <pthread.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/ptrace.h>
+#include <cstddef>
+#include <sys/user.h>
 #endif
 
 #include "sync.h"
@@ -710,6 +713,8 @@ typedef CONTEXT x64_context;
 #define X64REG(context, reg) (&(&(context)->Rax)[reg])
 #define XMMREG(context, reg) (reinterpret_cast<v128*>(&(&(context)->Xmm0)[reg]))
 #define EFLAGS(context) ((context)->EFlags)
+#define GET_DBGREG(context, reg) (*(&(&(context)->Dr0)[reg]))
+#define SET_DBGREG(context, reg, value) (*(&(&(context)->Dr0)[reg]) = value)
 
 #define ARG1(context) RCX(context)
 #define ARG2(context) RDX(context)
@@ -717,6 +722,25 @@ typedef CONTEXT x64_context;
 #else
 
 typedef ucontext_t x64_context;
+
+#define GET_DBGREG(context, reg) (linux_get_dbgreg(context, reg))
+#define SET_DBGREG(context, reg, value) (linux_set_dbgreg(context, reg, value))
+
+uint64_t linux_get_dbgreg(x64_context* context, int reg)
+{
+	(void)context;
+
+	uint64_t value;
+	ptrace(PTRACE_PEEKUSER, gettid(), offsetof(struct user, u_debugreg[reg]), &value);
+	return value;
+}
+
+void linux_set_dbgreg(x64_context* context, int reg, u64 value)
+{
+	(void)context;
+
+	ptrace(PTRACE_POKEUSER, gettid(), offsetof(struct user, u_debugreg[reg]), value);
+}
 
 #ifdef __APPLE__
 
@@ -1305,6 +1329,50 @@ bool handle_access_violation(u32 addr, bool is_writing, x64_context* context)
 	return true;
 }
 
+void handle_trap(x64_context* context)
+{
+	// Handle hardware breakpoint
+	bool any_hit = false;
+	const auto cpu = get_current_cpu_thread();
+	auto& breakpoints = hw_breakpoint_manager::get_breakpoints((thread_handle)(cpu->get()->get_native_handle()));
+
+	for (u32 i = 0; i < 4; ++i)
+	{
+		// Low bits of dr6 indicate which breakpoint was triggered
+		if (!(GET_DBGREG(context, 6) & (1 << i)))
+			continue;
+
+		// Get accessed address
+		u64 accessed_address = GET_DBGREG(context, i);
+		LOG_SUCCESS(GENERAL, "Hardware breakpoint hit at: 0x%08X", accessed_address);
+
+		if (!any_hit)
+		{
+			any_hit = true;
+
+			if (cpu)
+			{
+				cpu->state += cpu_flag::dbg_pause;
+			}
+		}
+
+		auto found_breakpoint = std::find_if(breakpoints.begin(), breakpoints.end(), [&](auto x) { return x->get_index() == i; });
+		if (found_breakpoint != breakpoints.end())
+		{
+			auto breakpoint = found_breakpoint->get();
+
+			auto handler = breakpoint->get_handler();
+			if (handler != nullptr)
+			{
+				handler(cpu, *breakpoint);
+			}
+		}
+}
+
+	// Clear DR6 -- status register
+	SET_DBGREG(context, 6, 0);
+}
+
 #ifdef __linux__
 extern "C" struct dwarf_eh_bases
 {
@@ -1367,15 +1435,6 @@ extern thread_local bool g_tls_inside_exception_handler = false;
 
 #ifdef _WIN32
 
-static LONG exception_handler_impl(PEXCEPTION_POINTERS pExp);
-static LONG exception_handler(PEXCEPTION_POINTERS pExp)
-{
-	g_tls_inside_exception_handler = true;
-	auto result = exception_handler_impl(pExp);
-	g_tls_inside_exception_handler = false;
-	return result;
-}
-
 static LONG exception_handler_impl(PEXCEPTION_POINTERS pExp)
 {
 	const u64 addr64 = pExp->ExceptionRecord->ExceptionInformation[1] - (u64)vm::g_base_addr;
@@ -1400,67 +1459,19 @@ static LONG exception_handler_impl(PEXCEPTION_POINTERS pExp)
 
 	if (pExp->ExceptionRecord->ExceptionCode == EXCEPTION_SINGLE_STEP)
 	{
-		// Handle hardware breakpoint
-		bool any_hit = false;
-		const auto cpu = get_current_cpu_thread();
-		auto& breakpoints = hw_breakpoint_manager::get_breakpoints((thread_handle)(cpu->get()->get_native_handle()));
-
-		for (u32 i = 0; i < 4; ++i)
-		{
-			// Low bits of dr6 indicate which breakpoint was triggered
-			if (!(pExp->ContextRecord->Dr6 & (1 << i)))
-				continue;
-
-			// Get accessed address
-			u64 accessed_address;
-			switch (i)
-			{
-			case 0:
-				accessed_address = pExp->ContextRecord->Dr0;
-				break;
-			case 1:
-				accessed_address = pExp->ContextRecord->Dr1;
-				break;
-			case 2:
-				accessed_address = pExp->ContextRecord->Dr2;
-				break;
-			case 3:
-				accessed_address = pExp->ContextRecord->Dr3;
-				break;
-			}
-
-			LOG_SUCCESS(GENERAL, "Hardware breakpoint hit at: 0x%08X", accessed_address);
-
-			if (!any_hit)
-			{
-				any_hit = true;
-
-				if (cpu)
-				{
-					cpu->state += cpu_flag::dbg_pause;
-				}
-			}
-
-			auto found_breakpoint = std::find_if(breakpoints.begin(), breakpoints.end(), [&](auto x) { return x->get_index() == i; });
-			if (found_breakpoint != breakpoints.end())
-			{
-				auto breakpoint = found_breakpoint->get();
-
-				auto handler = breakpoint->get_handler();
-				if (handler != nullptr)
-				{
-					handler(cpu, *breakpoint);
-				}
-			}
-		}
-
-		// Clear DR6 -- status register
-		pExp->ContextRecord->Dr6 = 0;
-
+		handle_trap(pExp->ContextRecord);
 		return EXCEPTION_CONTINUE_EXECUTION;
 	}
 
 	return EXCEPTION_CONTINUE_SEARCH;
+}
+
+static LONG exception_handler(PEXCEPTION_POINTERS pExp)
+{
+	g_tls_inside_exception_handler = true;
+	auto result = exception_handler_impl(pExp);
+	g_tls_inside_exception_handler = false;
+	return result;
 }
 
 static LONG exception_filter(PEXCEPTION_POINTERS pExp)
@@ -1603,66 +1614,7 @@ static void segfault_signal_handler(int sig, siginfo_t* info, void* uct)
 
 static void trap_signal_handler(int sig, siginfo_t* info, void* uct)
 {
-	auto context = static_cast<ucontext_t*>(uct);
-
-	// Handle hardware breakpoint
-	bool any_hit = false;
-	const auto cpu = get_current_cpu_thread();
-	auto& breakpoints = hw_breakpoint_manager::get_breakpoints((thread_handle)(cpu->get()->get_native_handle()));
-
-	for (u32 i = 0; i < 4; ++i)
-	{
-		// Todo
-		//// Low bits of dr6 indicate which breakpoint was triggered
-		//if (!(pExp->ContextRecord->Dr6 & (1 << i)))
-		//	continue;
-
-		//// Get accessed address
-		//u64 accessed_address;
-		//switch (i)
-		//{
-		//case 0:
-		//	accessed_address = pExp->ContextRecord->Dr0;
-		//	break;
-		//case 1:
-		//	accessed_address = pExp->ContextRecord->Dr1;
-		//	break;
-		//case 2:
-		//	accessed_address = pExp->ContextRecord->Dr2;
-		//	break;
-		//case 3:
-		//	accessed_address = pExp->ContextRecord->Dr3;
-		//	break;
-		//}
-
-		//LOG_SUCCESS(GENERAL, "Hardware breakpoint hit at: 0x%08X", accessed_address);
-
-		if (!any_hit)
-		{
-			any_hit = true;
-
-			if (cpu)
-			{
-				cpu->state += cpu_flag::dbg_pause;
-			}
-		}
-
-		auto found_breakpoint = std::find_if(breakpoints.begin(), breakpoints.end(), [&](auto x) { return x->get_index() == i; });
-		if (found_breakpoint != breakpoints.end())
-		{
-			auto breakpoint = found_breakpoint->get();
-
-			auto handler = breakpoint->get_handler();
-			if (handler != nullptr)
-			{
-				handler(cpu, *breakpoint);
-			}
-		}
-	}
-
-	// Todo
-	// Clear DR6
-	//pExp->ContextRecord->Dr6 = 0;
+	handle_trap(static_cast<x64_context*>(uct));
 }
 
 const bool s_exception_handler_set = []() -> bool
@@ -1745,8 +1697,12 @@ void thread_ctrl::start(const std::shared_ptr<thread_ctrl>& ctrl, task_stack tas
 	std::uintptr_t thread = _beginthreadex(nullptr, 0, entry, ctrl.get(), 0, nullptr);
 	verify("thread_ctrl::start" HERE), thread != 0;
 #else
-	pthread_t thread;
-	verify("thread_ctrl::start" HERE), pthread_create(&thread, nullptr, entry, ctrl.get()) == 0;
+	pthread_t pthread;
+	verify("thread_ctrl::start" HERE), pthread_create(&pthread, nullptr, entry, ctrl.get()) == 0;
+
+	linux_thread_handle* thread = new linux_thread_handle();
+	thread->pthread = pthread;
+	thread->tid = gettid();
 #endif
 
 	// TODO: this is unsafe and must be duplicated in thread_ctrl::initialize
@@ -1949,7 +1905,9 @@ thread_ctrl::~thread_ctrl()
 #ifdef _WIN32
 		CloseHandle((HANDLE)m_thread.raw());
 #else
-		pthread_detach((pthread_t)m_thread.raw());
+		linux_thread_handle* handle = (linux_thread_handle*)m_thread.raw();
+		pthread_detach(handle->pthread);
+		delete handle;
 #endif
 	}
 }

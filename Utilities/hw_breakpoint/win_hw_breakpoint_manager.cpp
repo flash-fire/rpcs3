@@ -81,7 +81,7 @@ bool win_hw_breakpoint_manager::remove(hw_breakpoint& handle)
 	return context->m_success;
 };
 
-inline static void set_debug_register_value(CONTEXT* context, u32 index, u64 value)
+inline static void set_breakpoint_address(CONTEXT* context, u32 index, u64 value)
 {
 	if (index == 0)
 	{
@@ -117,19 +117,19 @@ static DWORD WINAPI thread_proc(LPVOID lpParameter)
 	if (context->m_is_setting)
 	{
 		// Set breakpoint address
-		set_debug_register_value(&thread_context, handle->get_index(), handle->get_address());
+		set_breakpoint_address(&thread_context, handle->get_index(), handle->get_address());
 
 		// Set control flags
-		hw_breakpoint_manager_impl::set_debug_control_register(&thread_context.Dr7, handle->get_index(),
+		hw_breakpoint_manager_impl::set_debug_control_register_bits(&thread_context.Dr7, handle->get_index(),
 			handle->get_type(), handle->get_size(), true);
 	}
 	else
 	{
 		// Clear breakpoint address
-		set_debug_register_value(&thread_context, handle->get_index(), 0);
+		set_breakpoint_address(&thread_context, handle->get_index(), 0);
 
 		// Set control flags
-		hw_breakpoint_manager_impl::set_debug_control_register(&thread_context.Dr7, handle->get_index(),
+		hw_breakpoint_manager_impl::set_debug_control_register_bits(&thread_context.Dr7, handle->get_index(),
 			static_cast<hw_breakpoint_type>(0), static_cast<hw_breakpoint_size>(0), false);
 	}
 
