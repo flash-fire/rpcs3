@@ -12,7 +12,10 @@ protected:
 
 	bool remove(hw_breakpoint& handle) final;
 
-	bool set_debug_register_values(u32 index, pid_t thread, hw_breakpoint_type type, hw_breakpoint_size size, u32 address, bool enable);
+private:
+	bool set_impl(u32 index, pid_t thread, hw_breakpoint_type type, hw_breakpoint_size size, u32 address, bool enable);
+	bool get_debug_register_value(pid_t pid, u32 index, u64* value);
+	bool set_debug_register_value(pid_t pid, u32 index, u64 value);
 };
 
 #endif // #ifdef __linux__

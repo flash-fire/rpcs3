@@ -39,7 +39,7 @@ enum class hw_breakpoint_size
 #ifdef _WIN32
 using thread_handle = void*;
 #else
-using thread_handle = int;
+using thread_handle = linux_thread_handle*;
 #endif
 
 using hw_breakpoint_handler = std::function<void(const cpu_thread* thread, class hw_breakpoint& breakpoint)>;

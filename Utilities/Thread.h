@@ -10,6 +10,24 @@
 #include "sema.h"
 #include "cond.h"
 
+#ifndef _WIN32
+#include "sys/types.h"
+#include <sys/syscall.h>
+
+// gettid
+#ifdef SYS_gettid
+#define gettid() (syscall(SYS_gettid))
+#else
+#error "gettid unavailable on this system"
+#endif
+
+struct linux_thread_handle
+{
+	pthread_t pthread;
+	pid_t tid;
+};
+#endif
+
 // Report error and call std::abort(), defined in main.cpp
 [[noreturn]] void report_fatal_error(const std::string&);
 
