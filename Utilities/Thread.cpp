@@ -3,6 +3,7 @@
 #include "Emu/System.h"
 #include "Emu/IdManager.h"
 #include "Emu/Cell/RawSPUThread.h"
+#include "Emu/Cell/PPUThread.h"
 #include "Emu/Cell/lv2/sys_mmapper.h"
 #include "Emu/Cell/lv2/sys_event.h"
 #include "Thread.h"
@@ -714,8 +715,24 @@ typedef CONTEXT x64_context;
 #define X64REG(context, reg) (&(&(context)->Rax)[reg])
 #define XMMREG(context, reg) (reinterpret_cast<v128*>(&(&(context)->Xmm0)[reg]))
 #define EFLAGS(context) ((context)->EFlags)
-#define GET_DBGREG(context, reg) (*(&(&(context)->Dr0)[reg]))
-#define SET_DBGREG(context, reg, value) (*(&(&(context)->Dr0)[reg]) = value)
+
+uint64_t context_get_dr(x64_context* context, int index)
+{
+	// CONTEXT doesn't store DR4 and DR5 as they are deprecated synonyms for DR6 and DR7
+	if (index > 3)
+		index -= 2;
+
+	return (&context->Dr0)[index];
+}
+
+void context_set_dr(x64_context* context, int reg, uint64_t value)
+{
+	// CONTEXT doesn't store DR4 and DR5 as they are deprecated synonyms for DR6 and DR7
+	if (reg > 3)
+		reg -= 2;
+
+	(&context->Dr0)[reg] = value;
+}
 
 #define ARG1(context) RCX(context)
 #define ARG2(context) RDX(context)
@@ -724,10 +741,7 @@ typedef CONTEXT x64_context;
 
 typedef ucontext_t x64_context;
 
-#define GET_DBGREG(context, reg) (linux_get_dbgreg(context, reg))
-#define SET_DBGREG(context, reg, value) (linux_set_dbgreg(context, reg, value))
-
-uint64_t linux_get_dbgreg(x64_context* context, int reg)
+uint64_t context_get_dr(x64_context* context, int reg)
 {
 	(void)context;
 
@@ -736,7 +750,7 @@ uint64_t linux_get_dbgreg(x64_context* context, int reg)
 	return value;
 }
 
-void linux_set_dbgreg(x64_context* context, int reg, u64 value)
+void context_set_dr(x64_context* context, int reg, u64 value)
 {
 	(void)context;
 
@@ -1330,7 +1344,7 @@ bool handle_access_violation(u32 addr, bool is_writing, x64_context* context)
 	return true;
 }
 
-void handle_trap(x64_context* context)
+void handle_trap(x64_context* context, bool is_writing)
 {
 	// Handle hardware breakpoint
 	bool any_hit = false;
@@ -1340,12 +1354,12 @@ void handle_trap(x64_context* context)
 	for (u32 i = 0; i < 4; ++i)
 	{
 		// Low bits of dr6 indicate which breakpoint was triggered
-		if (!(GET_DBGREG(context, 6) & (1 << i)))
-			continue;
+		if (!(context_get_dr(context, 6) & (1 << i)))
+			continue;		
 
 		// Get accessed address
-		u64 accessed_address = GET_DBGREG(context, i);
-		LOG_SUCCESS(GENERAL, "Hardware breakpoint hit at: 0x%08X", accessed_address);
+		u64 accessed_address = context_get_dr(context, i);
+		LOG_SUCCESS(GENERAL, "Hardware breakpoint (0x%08X) hit while %s", accessed_address, is_writing ? "writing" : "reading" );
 
 		if (!any_hit)
 		{
@@ -1371,7 +1385,7 @@ void handle_trap(x64_context* context)
 }
 
 	// Clear DR6 -- status register
-	SET_DBGREG(context, 6, 0);
+	context_set_dr(context, 6, 0);
 }
 
 #ifdef __linux__
@@ -1460,7 +1474,7 @@ static LONG exception_handler_impl(PEXCEPTION_POINTERS pExp)
 
 	if (pExp->ExceptionRecord->ExceptionCode == EXCEPTION_SINGLE_STEP)
 	{
-		handle_trap(pExp->ContextRecord);
+		handle_trap(pExp->ContextRecord, is_writing);
 		return EXCEPTION_CONTINUE_EXECUTION;
 	}
 
@@ -1572,22 +1586,26 @@ const bool s_exception_handler_set = []() -> bool
 
 #else
 
+bool context_is_writing(x64_context* context)
+{
+#ifdef __APPLE__
+	return (context->uc_mcontext->__es.__err & 0x2);
+#elif defined(__DragonFly__) || defined(__FreeBSD__)
+	return (context->uc_mcontext.mc_err & 0x2);
+#elif defined(__OpenBSD__)
+	return (context->sc_err & 0x2);
+#elif defined(__NetBSD__)
+	return (context->uc_mcontext.__gregs[_REG_ERR] & 0x2);
+#else
+	return (context->uc_mcontext.gregs[REG_ERR] & 0x2);
+#endif
+}
+
 static void segfault_signal_handler(int sig, siginfo_t* info, void* uct)
 {
 	x64_context* context = (ucontext_t*)uct;
 
-#ifdef __APPLE__
-	const bool is_writing = context->uc_mcontext->__es.__err & 0x2;
-#elif defined(__DragonFly__) || defined(__FreeBSD__)
-	const bool is_writing = context->uc_mcontext.mc_err & 0x2;
-#elif defined(__OpenBSD__)
-	const bool is_writing = context->sc_err & 0x2;
-#elif defined(__NetBSD__)
-	const bool is_writing = context->uc_mcontext.__gregs[_REG_ERR] & 0x2;
-#else
-	const bool is_writing = context->uc_mcontext.gregs[REG_ERR] & 0x2;
-#endif
-
+	const bool is_writing = context_is_writing(context);
 	const u64 addr64 = (u64)info->si_addr - (u64)vm::g_base_addr;
 	const u64 exec64 = (u64)info->si_addr - (u64)vm::g_exec_addr;
 	const auto cause = is_writing ? "writing" : "reading";
@@ -1615,7 +1633,9 @@ static void segfault_signal_handler(int sig, siginfo_t* info, void* uct)
 
 static void trap_signal_handler(int sig, siginfo_t* info, void* uct)
 {
-	handle_trap(static_cast<x64_context*>(uct));
+	auto context = (x64_context*)uct;
+	const bool is_writing = context_is_writing(context);
+	handle_trap(context, is_writing);
 }
 
 const bool s_exception_handler_set = []() -> bool

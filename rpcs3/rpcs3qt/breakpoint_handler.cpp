@@ -118,6 +118,9 @@ void breakpoint_handler::UpdateGameID()
 
 	for (u32 addr : m_breakpoints[m_gameid].keys())
 	{
+		if (!vm::check_addr(addr))
+			continue;
+
 		// todo: add databreakpoints
 		ppu_set_breakpoint(addr);
 	}
