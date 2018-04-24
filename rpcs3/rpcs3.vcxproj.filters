@@ -757,6 +757,9 @@
     <ClInclude Include="expression_evaluator.h">
       <Filter>Gui\debugger</Filter>
     </ClInclude>
+    <ClInclude Include="rpcs3qt\breakpoint_types.h">
+      <Filter>Gui\debugger</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="debug\moc_predefs.h.cbt">
