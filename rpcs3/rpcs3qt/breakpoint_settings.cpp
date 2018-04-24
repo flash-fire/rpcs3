@@ -2,48 +2,52 @@
 
 #include "Utilities/File.h"
 
-breakpoint_settings::breakpoint_settings(QObject* parent) : QObject(parent), 
-	m_bp_settings(QString::fromStdString(fs::get_config_dir()) + "/GuiConfigs/" + tr("Breakpoints") + ".ini", QSettings::Format::IniFormat, this)
+inline std::string sstr(const QString& _in) { return _in.toStdString(); }
+
+breakpoint_settings::breakpoint_settings(QObject* parent) : QObject(parent)
 {
+	m_bp_settings = YAML::Load(fs::file{ fs::get_config_dir() + bp_file_name, fs::read + fs::create }.to_string());
 }
 
 breakpoint_settings::~breakpoint_settings()
 {
-	m_bp_settings.sync();
+	YAML::Emitter out;
+	out << m_bp_settings;
+
+	fs::file bp_settings = fs::file(fs::get_config_dir() + bp_file_name, fs::read + fs::write + fs::create);
+
+	// Save breakpoints
+	bp_settings.seek(0);
+	bp_settings.trunc(0);
+	bp_settings.write(out.c_str(), out.size());
 }
 
-void breakpoint_settings::SetBreakpoint(const QString& gameid, u32 addr, const breakpoint_data& bp_data)
+void breakpoint_settings::SetBreakpoint(const QString& gameid, u32 addr, const exec_breakpoint_data& bp_data)
 {
-	m_bp_settings.beginGroup(gameid);
-	m_bp_settings.setValue(QString::number(addr, 16), QString("%0|%1").arg(QString::number(bp_data.flags), bp_data.name)); // Split flag and name with delimiter
-	m_bp_settings.endGroup();
+	YAML::Node bp_node = YAML::Node();
+	bp_node["name"] = sstr(bp_data.name);
+	bp_node["type"] = static_cast<u32>(bp_data.type);
+	m_bp_settings[sstr(gameid)][addr] = bp_node;
 }
 
 void breakpoint_settings::RemoveBreakpoint(const QString& gameid, u32 addr)
 {
-	m_bp_settings.beginGroup(gameid);
-	m_bp_settings.remove(QString::number(addr, 16));
-	m_bp_settings.endGroup();
+	// why the hell does the std library not have hex conversion to string in std::?? but has stoi?
+	m_bp_settings[sstr(gameid)].remove(sstr(QString::number(addr, 16)));
 }
 
-QMap<QString, QMap<u32, breakpoint_data>> breakpoint_settings::ReadBreakpoints()
-{
-	QMap<QString, QMap<u32, breakpoint_data>> ret;
 
-	const QStringList& gameids = m_bp_settings.childGroups();
-	for (const QString& id: gameids)
+QMap<u32, exec_breakpoint_data> breakpoint_settings::ReadExecBreakpoints(const QString& game_id)
+{
+	QMap<u32, exec_breakpoint_data> ret;
+	std::string game = m_bp_settings[sstr(game_id)].Scalar();
+	for (auto& breakpoint : m_bp_settings[sstr(game_id)])
 	{
-		m_bp_settings.beginGroup(id);
-		const QStringList& addrs = m_bp_settings.childKeys();
-		for (const QString& addr : addrs)
-		{
-			u32 addr_ = addr.toUInt(nullptr, 16);
-			QString flags_name = m_bp_settings.value(addr).toString();
-			u32 flags = flags_name.section("|", 0, 0).toInt(); // Ignore any | in the name itself.
-			QString name = flags_name.section("|", 1);
-			ret[id][addr_] = { flags, name };
-		}
-		m_bp_settings.endGroup();
+		u32 addr = stoi(breakpoint.first.Scalar(), nullptr, 16);
+		std::string name = breakpoint.second["name"].Scalar();
+		u32 type = stoi(breakpoint.second["type"].Scalar(), nullptr, 16);
+		exec_breakpoint_data data = { static_cast<breakpoint_type>(type), QString::fromStdString(name) };
+		ret[addr] = data;
 	}
 	return ret;
 }

@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef ugh______
+#define ugh______
 #include "stdafx.h"
 #include "Emu/CPU/CPUDisAsm.h"
 
@@ -36,3 +36,5 @@ private:
 	std::shared_ptr<CPUDisAsm> m_disasm;
 	QString m_lastBreakpointText;
 };
+
+#endif

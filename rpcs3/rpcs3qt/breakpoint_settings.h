@@ -1,25 +1,15 @@
 #pragma once
 
+#include "breakpoint_types.h"
+
 #include "Utilities/types.h"
 
+#include "yaml-cpp/yaml.h"
+
+#include <QVector>
 #include <QMap>
 #include <QString>
 #include <QSettings>
-
-
-// Consider making a separate header just to hold this so that I don't have the enum I use and the data struct in different classes.
-// TODO: Add minimum amount so that hardware breakpoints can be reconstructed when serialized.
-// IF merging the two classes together (breakpoint handler, hardare breakpoints) doesn't happen, then use minimal amount possible.
-struct breakpoint_data
-{
-	u32 flags;
-	QString name;
-
-	breakpoint_data(u32 flags, const QString& name) : flags(flags), name(name) {};
-	breakpoint_data() : flags(0), name("breakpoint") {};
-
-	bool operator ==(const breakpoint_data& data) { return flags == data.flags && name == data.name; };
-};
 
 /**
  * This class acts as a medium to write breakpoints to and from settings.  
@@ -35,7 +25,7 @@ public:
 	/*
 	* Sets a breakpoint at the specified location.
 	*/
-	void SetBreakpoint(const QString& gameid, u32 addr, const breakpoint_data& bp_data);
+	void SetBreakpoint(const QString& gameid, u32 addr, const exec_breakpoint_data& bp_data);
 	
 	/*
 	* Removes the breakpoint at specifiied location.
@@ -45,7 +35,8 @@ public:
 	/*
 	* Reads all breakpoints from ini file. 
 	*/
-	QMap<QString, QMap<u32, breakpoint_data>> ReadBreakpoints();
+	QMap<u32, exec_breakpoint_data> ReadExecBreakpoints(const QString& game_id);
 private:
-	QSettings m_bp_settings;
+	const std::string bp_file_name = "/breakpoints.yml";
+	YAML::Node m_bp_settings;
 };

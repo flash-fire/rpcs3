@@ -48,7 +48,7 @@ void breakpoint_list::ClearBreakpoints()
 
 void breakpoint_list::RemoveBreakpoint(u32 addr)
 {
-	m_breakpoint_handler->RemoveBreakpoint(addr, static_cast<u32>(breakpoint_types::exec));
+	m_breakpoint_handler->RemoveBreakpoint(addr);
 
 	for (int i = 0; i < count(); i++)
 	{
@@ -67,7 +67,7 @@ void breakpoint_list::RemoveBreakpoint(u32 addr)
 void breakpoint_list::SynchronizeList()
 {
 	ClearBreakpoints();
-	QMap<u32, breakpoint_data> bps = m_breakpoint_handler->GetCurrentBreakpoints();
+	QMap<u32, exec_breakpoint_data> bps = m_breakpoint_handler->GetCurrentBreakpoints();
 
 	auto bp_iter = bps.constBegin();
 	while (bp_iter != bps.constEnd())
@@ -91,8 +91,7 @@ void breakpoint_list::AddBreakpoint(u32 pc, const QString& name)
 		bp_name = qstr(m_disasm->last_opcode);
 		bp_name.remove(10, 13);
 	}
-	m_breakpoint_handler->AddBreakpoint(pc, static_cast<u32>(breakpoint_types::exec), bp_name);
-
+	m_breakpoint_handler->AddExecBreakpoint(pc, bp_name);
 
 	QListWidgetItem* breakpointItem = new QListWidgetItem(bp_name);
 	breakpointItem->setTextColor(m_text_color_bp);
