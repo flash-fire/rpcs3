@@ -443,6 +443,12 @@ void debugger_frame::WriteRegs()
 
 void debugger_frame::ShowGotoAddressDialog()
 {
+	// Look, if the CPU is null, the expression evaluator will die.
+	// So, what's the point of going to an address if you're going to die immediately?
+	if (!cpu.lock())
+	{
+		return;
+	}
 	QDialog* diag = new QDialog(this);
 	diag->setWindowTitle(tr("Enter expression"));
 	diag->setModal(true);
