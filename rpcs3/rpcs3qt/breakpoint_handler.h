@@ -29,7 +29,7 @@ public:
 	* Adds a breakpoint at specified address. If breakpoint exists at same address, it is replaced.
 	* A transient breakpoint is one that does not get saved to disc.  This would happen when breakpoints are used internally, ie. step over
 	*/
-	void AddExecBreakpoint(u32 addr, const QString& name, bool transient = false);
+	bool AddExecBreakpoint(u32 addr, const QString& name, bool transient = false);
 
 	/**
 	* Adds a breakpoint at specified address. If breakpoint exists at same address, it is replaced.

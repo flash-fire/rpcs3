@@ -11,6 +11,16 @@ breakpoint_settings::breakpoint_settings(QObject* parent) : QObject(parent)
 
 breakpoint_settings::~breakpoint_settings()
 {
+}
+
+void breakpoint_settings::SetBreakpoint(const QString& gameid, u32 addr, const exec_breakpoint_data& bp_data)
+{
+	YAML::Node bp_node = YAML::Node();
+	bp_node["name"] = sstr(bp_data.name);
+	bp_node["type"] = static_cast<u32>(bp_data.type);
+	m_bp_settings[sstr(gameid)][addr] = bp_node;
+
+	// Save breakpoint immediately.  Set doesn't happen often so this isn't bad speed wise.
 	YAML::Emitter out;
 	out << m_bp_settings;
 
@@ -20,14 +30,6 @@ breakpoint_settings::~breakpoint_settings()
 	bp_settings.seek(0);
 	bp_settings.trunc(0);
 	bp_settings.write(out.c_str(), out.size());
-}
-
-void breakpoint_settings::SetBreakpoint(const QString& gameid, u32 addr, const exec_breakpoint_data& bp_data)
-{
-	YAML::Node bp_node = YAML::Node();
-	bp_node["name"] = sstr(bp_data.name);
-	bp_node["type"] = static_cast<u32>(bp_data.type);
-	m_bp_settings[sstr(gameid)][addr] = bp_node;
 }
 
 void breakpoint_settings::RemoveBreakpoint(const QString& gameid, u32 addr)

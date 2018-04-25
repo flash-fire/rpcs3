@@ -3,8 +3,8 @@
 constexpr auto qstr = QString::fromStdString;
 
 // PPU Thread functions concerning breakpoints.
-extern void ppu_set_breakpoint(u32 addr);
-extern void ppu_remove_breakpoint(u32 addr);
+extern bool ppu_set_breakpoint(u32 addr);
+extern bool ppu_remove_breakpoint(u32 addr);
 
 breakpoint_handler::breakpoint_handler(QObject* parent) : QObject(parent), m_exec_breakpoints(),
 	m_gameid("default"), m_breakpoint_settings(this), cpu()
@@ -23,19 +23,29 @@ bool breakpoint_handler::HasBreakpoint(u32 addr) const
 	return m_exec_breakpoints.value(addr, {}).type != breakpoint_type::none;
 }
 
-void breakpoint_handler::AddExecBreakpoint(u32 addr, const QString& name, bool transient)
+bool breakpoint_handler::AddExecBreakpoint(u32 addr, const QString& name, bool transient)
 {
+	if (!vm::check_addr(addr))
+	{
+		return false;
+		Emu.Pause();
+	}
 	if (HasBreakpoint(addr))
 	{
 		RemoveBreakpoint(addr);
 	}
 
-	ppu_set_breakpoint(addr);
+	if (!ppu_set_breakpoint(addr))
+	{
+		return false;
+	}
+
 	m_exec_breakpoints[addr] = { breakpoint_type::exec, name };
 	if (!transient)
 	{
 		m_breakpoint_settings.SetBreakpoint(m_gameid, addr, m_exec_breakpoints[addr]);
 	}
+	return true;
 }
 
 void breakpoint_handler::AddMemoryBreakpoint(u32 addr, hw_breakpoint_type type, hw_breakpoint_size size, const QString& name)
