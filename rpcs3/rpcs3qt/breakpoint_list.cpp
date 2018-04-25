@@ -91,15 +91,22 @@ void breakpoint_list::AddBreakpoint(u32 pc, const QString& name)
 		bp_name = qstr(m_disasm->last_opcode);
 		bp_name.remove(10, 13);
 	}
-	m_breakpoint_handler->AddExecBreakpoint(pc, bp_name);
-
-	QListWidgetItem* breakpointItem = new QListWidgetItem(bp_name);
-	breakpointItem->setTextColor(m_text_color_bp);
-	breakpointItem->setBackgroundColor(m_color_bp);
-	QVariant pcVariant;
-	pcVariant.setValue(pc);
-	breakpointItem->setData(Qt::UserRole, pcVariant);
-	addItem(breakpointItem);
+	// Error reports already so no need to put it here.
+	if (m_breakpoint_handler->AddExecBreakpoint(pc, bp_name))
+	{
+		QListWidgetItem* breakpointItem = new QListWidgetItem(bp_name);
+		breakpointItem->setTextColor(m_text_color_bp);
+		breakpointItem->setBackgroundColor(m_color_bp);
+		QVariant pcVariant;
+		pcVariant.setValue(pc);
+		breakpointItem->setData(Qt::UserRole, pcVariant);
+		addItem(breakpointItem);
+	}
+	else
+	{
+		// May as well show the user that the address is illegal.
+		Q_EMIT RequestShowAddress(pc);
+	}
 }
 
 /**

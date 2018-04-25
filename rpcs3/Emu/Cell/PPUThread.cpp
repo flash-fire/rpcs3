@@ -346,35 +346,50 @@ void ppu_thread::on_init(const std::shared_ptr<void>& _this)
 }
 
 //sets breakpoint, does nothing if there is a breakpoint there already
-extern void ppu_set_breakpoint(u32 addr)
+extern bool ppu_set_breakpoint(u32 addr)
 {
 	if (g_cfg.core.ppu_decoder == ppu_decoder_type::llvm)
 	{
-		return;
+		return false;
 	}
 
 	const auto _break = ::narrow<u32>(reinterpret_cast<std::uintptr_t>(&ppu_break));
-
-	if (ppu_ref(addr) != _break)
+	
+	if (vm::check_addr(addr))
 	{
-		ppu_ref(addr) = _break;
+		if (ppu_ref(addr) != _break)
+		{
+			ppu_ref(addr) = _break;
+		}
 	}
+	else
+	{
+		return false;
+	}
+	return true;
 }
 
 //removes breakpoint, does nothing if there is no breakpoint at location
-extern void ppu_remove_breakpoint(u32 addr)
+extern bool ppu_remove_breakpoint(u32 addr)
 {
 	if (g_cfg.core.ppu_decoder == ppu_decoder_type::llvm)
 	{
-		return;
+		return false;
 	}
 
 	const auto _break = ::narrow<u32>(reinterpret_cast<std::uintptr_t>(&ppu_break));
-
-	if (ppu_ref(addr) == _break)
+	if (vm::check_addr(addr))
 	{
-		ppu_ref(addr) = ppu_cache(addr);
+		if (ppu_ref(addr) == _break)
+		{
+			ppu_ref(addr) = ppu_cache(addr);
+		}
 	}
+	else
+	{
+		return false;
+	}
+	return true;
 }
 
 extern bool ppu_patch(u32 addr, u32 value)

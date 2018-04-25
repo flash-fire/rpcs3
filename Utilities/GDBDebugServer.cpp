@@ -16,8 +16,8 @@
 #include "fcntl.h"
 #endif
 
-extern void ppu_set_breakpoint(u32 addr);
-extern void ppu_remove_breakpoint(u32 addr);
+extern bool ppu_set_breakpoint(u32 addr);
+extern bool ppu_remove_breakpoint(u32 addr);
 
 logs::channel gdbDebugServer("gdbDebugServer");
 
