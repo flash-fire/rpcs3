@@ -83,6 +83,8 @@ public Q_SLOTS:
 	void OnEmuPause();
 	void OnEmuReady();
 
+	void OnThreadCreated(const named_thread* thrd);
+
 	void RepaintGui();
 
 private Q_SLOTS:

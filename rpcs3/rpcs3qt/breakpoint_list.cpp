@@ -72,9 +72,10 @@ void breakpoint_list::SynchronizeList()
 	auto bp_iter = bps.constBegin();
 	while (bp_iter != bps.constEnd())
 	{
-		AddBreakpoint(bp_iter.key(), bp_iter.value().name); // Future, handle the flags. No point doing so right now.
+		AddBreakpoint(bp_iter.key(), bp_iter.value().m_ui_name);
 		++bp_iter;
 	}
+	// TODO: Show HW breakpoints in UI.
 }
 
 void breakpoint_list::AddBreakpoint(u32 pc, const QString& name)

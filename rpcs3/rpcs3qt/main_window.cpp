@@ -868,6 +868,11 @@ void main_window::OnEmuReady()
 	EnableMenus(true);
 }
 
+void main_window::OnThreadCreated(const named_thread* thrd)
+{
+	m_debuggerFrame->SynchronizeHardwareBreakpoints(thrd);
+}
+
 void main_window::EnableMenus(bool enabled)
 {
 	// Thumbnail Buttons

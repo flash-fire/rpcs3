@@ -151,8 +151,13 @@ void debugger_frame::UpdateBreakpointList()
 	m_choice_units->setCurrentIndex(m_choice_units->count()-1); // trick to make the address valid temporarily.
 	m_breakpoint_handler->UpdateGameID();
 	m_breakpoint_list->SynchronizeList();
-	m_breakpoint_handler->test();
+	m_breakpoint_handler->test(cpu.lock().get()); // remove this test call after first run to prove that deserializing works.
 	m_choice_units->setCurrentIndex(0); // now revert index back to original. Since new thread was just created, it'll always be on default.
+}
+
+void debugger_frame::SynchronizeHardwareBreakpoints(const named_thread* thrd)
+{
+	m_breakpoint_handler->AddCompatibleHWBreakpoints(thrd);
 }
 
 void debugger_frame::SaveSettings()
@@ -402,7 +407,6 @@ void debugger_frame::OnSelectUnit()
 
 	m_debugger_list->UpdateCPUData(this->cpu, m_disasm);
 	m_breakpoint_list->UpdateCPUData(this->cpu, m_disasm);
-	m_breakpoint_handler->UpdateCPUThread(this->cpu);
 	DoUpdate();
 }
 

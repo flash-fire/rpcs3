@@ -128,6 +128,11 @@ void rpcs3_app::InitializeCallbacks()
 		RequestCallAfter(std::move(func));
 	};
 
+	callbacks.on_thread_created = [this](const named_thread* thrd)
+	{
+		Q_EMIT OnThreadCreated(thrd);
+	};
+
 	callbacks.get_kb_handler = [=]() -> std::shared_ptr<KeyboardHandlerBase>
 	{
 		switch (keyboard_handler type = g_cfg.io.keyboard)
@@ -313,6 +318,7 @@ void rpcs3_app::InitializeConnects()
 	connect(this, &rpcs3_app::OnEmulatorPause, RPCS3MainWin, &main_window::OnEmuPause);
 	connect(this, &rpcs3_app::OnEmulatorResume, RPCS3MainWin, &main_window::OnEmuResume);
 	connect(this, &rpcs3_app::OnEmulatorReady, RPCS3MainWin, &main_window::OnEmuReady);
+	connect(this, &rpcs3_app::OnThreadCreated, RPCS3MainWin, &main_window::OnThreadCreated);
 }
 
 /*

@@ -183,6 +183,7 @@ struct EmuCallbacks
 	std::function<void()> on_ready;
 	std::function<void()> exit;
 	std::function<void(s32, s32)> handle_taskbar_progress; // (type, value) type: 0 for reset, 1 for increment, 2 for set_limit
+	std::function<void(const class named_thread*)> on_thread_created;
 	std::function<void(const class ppu_thread&)> on_ppu_breakpoint_triggered;
 	std::function<std::shared_ptr<class KeyboardHandlerBase>()> get_kb_handler;
 	std::function<std::shared_ptr<class MouseHandlerBase>()> get_mouse_handler;
