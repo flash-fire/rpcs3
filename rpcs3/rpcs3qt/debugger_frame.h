@@ -75,6 +75,7 @@ public:
 
 	u32 GetPc() const;
 	void UpdateBreakpointList();
+	void SynchronizeHardwareBreakpoints(const named_thread* thrd);
 	void DoUpdate();
 	void WriteRegs();
 	void EnableButtons(bool enable);

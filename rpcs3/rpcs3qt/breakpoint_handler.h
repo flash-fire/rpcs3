@@ -35,8 +35,8 @@ public:
 	* Adds a breakpoint at specified address. If breakpoint exists at same address, it is replaced.
 	* Transient breakpoints aren't currently needed for memory.  But, a size is.
 	*/
-	void AddMemoryBreakpoint(u32 addr, hw_breakpoint_type type, hw_breakpoint_size size, const QString& name);
-
+	void AddHWBreakpoint(const named_thread* targ_thread, u32 addr, hw_breakpoint_type type, hw_breakpoint_size size, const QString& name);
+	
 	/*
 	* Changes the specified breakpoint's name. 
 	*/
@@ -47,12 +47,25 @@ public:
 	*/
 	void RemoveBreakpoint(u32 addr);
 
+	/*
+	* This is used on thread creation to add the relevant hardware breakpoints to said thread.
+	*/
+	void AddCompatibleHWBreakpoints(const named_thread* thrd);
+
 	/**
 	* Gets the current breakpoints.  Namely, m_exec_breakpoints[m_gameid]
 	*/
-	QMap<u32, exec_breakpoint_data> GetCurrentBreakpoints()
+	QMap<u32, exec_breakpoint_data> GetCurrentBreakpoints() const
 	{
 		return m_exec_breakpoints;
+	}
+
+	/**
+	* Call this immediately at creation in order to add them to UI despite being not added to game yet.
+	*/
+	QVector<serialized_hw_breakpoint> GetSerializedHWBreakpoints() const
+	{
+		return m_ser_hw_breakpoints;
 	}
 
 	/**
@@ -61,17 +74,18 @@ public:
 	void UpdateGameID();
 
 	/*
-	* Ugh. For hardware breakpoints, I need access to the thread.  So, pass it in here.
-	*/
-	void UpdateCPUThread(std::weak_ptr<cpu_thread> cpu);
-
-	/*
 	* delete later.  It's just here so I can test the code before making a proper UI. (proper UI is always last :D)
 	*/
-	void test();
+	void test(const named_thread* thrd);
 private:
+	u32 IndexOfHWBreakpoint(u32 addr);
+	void AddHWBreakpointInternal(const named_thread* cpu_thread, u32 addr, breakpoint_type settings_type, hw_breakpoint_type type, hw_breakpoint_size size, const QString& name);
+	hw_breakpoint_type GetHWBreakpointType(breakpoint_type type);
+	breakpoint_type GetBreakpointType(hw_breakpoint_type hw_type);
+
 	QMap<u32, exec_breakpoint_data> m_exec_breakpoints; //! Addr --> Breakpoint Data
+	QVector<std::shared_ptr<hw_breakpoint>> m_hw_breakpoints; //! We can't store the two breakpoint types together as they're different data. Split as such.
+	QVector<serialized_hw_breakpoint> m_ser_hw_breakpoints; //! Hardware breakpoints that aren't yet inserted into the game as thread doesn't exist.
 	QString m_gameid; // ID of current game being used for breakpoints.
 	breakpoint_settings m_breakpoint_settings; // Used to read and write settings to disc.
-	std::weak_ptr<cpu_thread> cpu; // needed for hardware breakpoints.
 };

@@ -40,6 +40,7 @@ Q_SIGNALS:
 	void OnEmulatorResume();
 	void OnEmulatorStop();
 	void OnEmulatorReady();
+	void OnThreadCreated(const named_thread* thrd);
 	void RequestCallAfter(const std::function<void()>& func);
 private Q_SLOTS:
 	void OnChangeStyleSheetRequest(const QString& path);

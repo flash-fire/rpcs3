@@ -25,18 +25,30 @@ public:
 	/*
 	* Sets a breakpoint at the specified location.
 	*/
-	void SetBreakpoint(const QString& gameid, u32 addr, const exec_breakpoint_data& bp_data);
+	void SetExecBreakpoint(const QString& gameid, u32 addr, const exec_breakpoint_data& bp_data);
 	
 	/*
-	* Removes the breakpoint at specifiied location.
+	* Sets a HW breakpoint at specified location. 
+	*/
+	void SetHWBreakpoint(const QString& gameid, const serialized_hw_breakpoint& bp_data);
+
+	/*
+	* Removes the breakpoint (regardless of HW or Exec) at specifiied location.
 	*/
 	void RemoveBreakpoint(const QString& gameid, u32 addr);
 
 	/*
-	* Reads all breakpoints from ini file. 
+	* Reads all exec breakpoints from ini file. 
 	*/
 	QMap<u32, exec_breakpoint_data> ReadExecBreakpoints(const QString& game_id);
+
+	/*
+	* Reads all exec breakpoints from ini file.
+	*/
+	QVector<serialized_hw_breakpoint> ReadHWBreakpoints(const QString& game_id);
 private:
+	std::string ToHexString(u32 num);
+	void SaveSettings();
 	const std::string bp_file_name = "/breakpoints.yml";
 	YAML::Node m_bp_settings;
 };

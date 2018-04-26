@@ -291,6 +291,7 @@ error_code _sys_ppu_thread_create(vm::ptr<u64> thread_id, vm::ptr<ppu_thread_par
 	const u32 tid = idm::import<ppu_thread>([&]()
 	{
 		auto ppu = std::make_shared<ppu_thread>(threadname ? threadname.get_ptr() : "", prio, stacksize);
+		Emu.GetCallbacks().on_thread_created(ppu.get());
 
 		if ((flags & SYS_PPU_THREAD_CREATE_JOINABLE) != 0)
 		{
