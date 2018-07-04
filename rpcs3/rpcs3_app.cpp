@@ -128,7 +128,7 @@ void rpcs3_app::InitializeCallbacks()
 		RequestCallAfter(std::move(func));
 	};
 
-	callbacks.on_thread_created = [this](const named_thread* thrd)
+	callbacks.on_thread_created = [this](const std::shared_ptr<named_thread>& thrd)
 	{
 		Q_EMIT OnThreadCreated(thrd);
 	};

@@ -83,7 +83,7 @@ public Q_SLOTS:
 	void OnEmuPause();
 	void OnEmuReady();
 
-	void OnThreadCreated(const named_thread* thrd);
+	void OnThreadCreated(const std::shared_ptr<named_thread>& thrd);
 
 	void RepaintGui();
 

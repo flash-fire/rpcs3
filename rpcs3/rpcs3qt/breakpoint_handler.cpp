@@ -148,7 +148,6 @@ void breakpoint_handler::UpdateGameID()
 		if (!vm::check_addr(addr))
 			continue;
 
-		// todo: add databreakpoints
 		ppu_set_breakpoint(addr);
 	}
 

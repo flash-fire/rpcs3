@@ -868,9 +868,9 @@ void main_window::OnEmuReady()
 	EnableMenus(true);
 }
 
-void main_window::OnThreadCreated(const named_thread* thrd)
+void main_window::OnThreadCreated(const std::shared_ptr<named_thread>& thrd)
 {
-	m_debuggerFrame->SynchronizeHardwareBreakpoints(thrd);
+	m_debuggerFrame->SynchronizeHardwareBreakpoints(thrd.get());
 }
 
 void main_window::EnableMenus(bool enabled)
