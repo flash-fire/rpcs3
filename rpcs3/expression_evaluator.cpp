@@ -5,52 +5,86 @@
 #include <QString>
 #include <QJSEngine>
 
-u64 expression_evaluator::evaluate_u64(const cpu_thread& cpu, const QString& expression)
+u64 expression_evaluator::evaluate_u64(const cpu_thread* cpu, const QString& expression)
 {
-	if (cpu.id_type() == 1)
+	if (cpu == nullptr)
 	{
-		return evaluate_u64((ppu_thread&)cpu, expression);
+		return evaluate_null_u64(expression);
+	}
+	if (cpu->id_type() == 1)
+	{
+		return evaluate_u64((ppu_thread*)cpu, expression);
 	}
 	else
 	{
-		return evaluate_u64((SPUThread&)cpu, expression);
+		return evaluate_u64((SPUThread*)cpu, expression);
 	}
 }
 
-u64 expression_evaluator::evaluate_u64(const ppu_thread& ppu, const QString& expression)
+u64 expression_evaluator::evaluate_null_u64(const QString& expression)
 {
+	return static_cast<u64>(QJSEngine().evaluate(expression).toNumber());
+}
+
+bool expression_evaluator::evaluate_null_bool(const QString& expression)
+{
+	return static_cast<u64>(QJSEngine().evaluate(expression).toBool());
+}
+
+u64 expression_evaluator::evaluate_u64(const ppu_thread* ppu, const QString& expression)
+{
+	if (ppu == nullptr)
+	{
+		return evaluate_null_u64(expression);
+	}
 	return evaluate_u64_impl(ppu, expression);
 }
 
-u64 expression_evaluator::evaluate_u64(const SPUThread& spu, const QString& expression)
+u64 expression_evaluator::evaluate_u64(const SPUThread* spu, const QString& expression)
 {
+	if (spu == nullptr)
+	{
+		return evaluate_null_u64(expression);
+	}
 	return evaluate_u64_impl(spu, expression);
 }
 
-bool expression_evaluator::evaluate_bool(const cpu_thread& cpu, const QString& expression)
+bool expression_evaluator::evaluate_bool(const cpu_thread* cpu, const QString& expression)
 {
-	if (cpu.id_type() == 1)
+	if (cpu == nullptr)
 	{
-		return evaluate_bool((ppu_thread&)cpu, expression);
+		return evaluate_null_bool(expression);
+	}
+	if (cpu->id_type() == 1)
+	{
+		return evaluate_bool((ppu_thread*)cpu, expression);
 	}
 	else
 	{
-		return evaluate_bool((SPUThread&)cpu, expression);
+		return evaluate_bool((SPUThread*)cpu, expression);
 	}
 }
 
-bool expression_evaluator::evaluate_bool(const ppu_thread& ppu, const QString& expression)
+bool expression_evaluator::evaluate_bool(const ppu_thread* ppu, const QString& expression)
 {
+	if (ppu == nullptr)
+	{
+		return evaluate_null_bool(expression);
+	}
 	return evaluate_bool_impl(ppu, expression);
 }
 
-bool expression_evaluator::evaluate_bool(const SPUThread& spu, const QString& expression)
+bool expression_evaluator::evaluate_bool(const SPUThread* spu, const QString& expression)
 {
+	if (spu == nullptr)
+	{
+		return evaluate_null_bool(expression);
+	}
 	return evaluate_bool_impl(spu, expression);
 }
 
 template<typename T>
-inline u64 expression_evaluator::evaluate_u64_impl(const T& thread, const QString& expression)
+inline u64 expression_evaluator::evaluate_u64_impl(const T* thread, const QString& expression)
 {
 	auto context = make_context(thread);
 	auto value = context->evaluate(expression);
@@ -58,14 +92,14 @@ inline u64 expression_evaluator::evaluate_u64_impl(const T& thread, const QStrin
 }
 
 template<typename T>
-inline bool expression_evaluator::evaluate_bool_impl(const T& thread, const QString& expression)
+inline bool expression_evaluator::evaluate_bool_impl(const T* thread, const QString& expression)
 {
 	auto context = make_context(thread);
 	auto value = context->evaluate(expression);
 	return value.toBool();
 }
 
-QJSEngine* expression_evaluator::make_context(const ppu_thread& ppu)
+QJSEngine* expression_evaluator::make_context(const ppu_thread* ppu)
 {
 	auto context = new QJSEngine();
 
@@ -82,21 +116,21 @@ QJSEngine* expression_evaluator::make_context(const ppu_thread& ppu)
 	};
 
 	// Define properties for registers
-	prop("pc", ppu.cia);
-	prop("cia", ppu.cia);
+	prop("pc", ppu->cia);
+	prop("cia", ppu->cia);
 
 	for (int i = 0; i < 32; ++i)
 	{
-		prop64(QString("r%1").arg(i), ppu.gpr[i]);
+		prop64(QString("r%1").arg(i), ppu->gpr[i]);
 	}
 
-	prop64("lr", ppu.lr);
-	prop64("ctr", ppu.ctr);
+	prop64("lr", ppu->lr);
+	prop64("ctr", ppu->ctr);
 
 	return context;
 }
 
-QJSEngine* expression_evaluator::make_context(const SPUThread& spu)
+QJSEngine* expression_evaluator::make_context(const SPUThread* spu)
 {
 	auto context = new QJSEngine();
 
@@ -107,15 +141,15 @@ QJSEngine* expression_evaluator::make_context(const SPUThread& spu)
 	};
 
 	// Define properties for registers
-	prop("pc", spu.pc);
-	prop("cia", spu.pc);
+	prop("pc", spu->pc);
+	prop("cia", spu->pc);
 
 	for (int i = 0; i < 128; ++i)
 	{
-		prop(QString("r%1hi").arg(i), QJSValue(spu.gpr[i]._u32[0]));
-		prop(QString("r%1lo").arg(i), QJSValue(spu.gpr[i]._u32[1]));
-		prop(QString("r%1hilo").arg(i), QJSValue(spu.gpr[i]._u32[2]));
-		prop(QString("r%1hihi").arg(i), QJSValue(spu.gpr[i]._u32[3]));
+		prop(QString("r%1hi").arg(i), QJSValue(spu->gpr[i]._u32[0]));
+		prop(QString("r%1lo").arg(i), QJSValue(spu->gpr[i]._u32[1]));
+		prop(QString("r%1hilo").arg(i), QJSValue(spu->gpr[i]._u32[2]));
+		prop(QString("r%1hihi").arg(i), QJSValue(spu->gpr[i]._u32[3]));
 	}
 
 	return context;

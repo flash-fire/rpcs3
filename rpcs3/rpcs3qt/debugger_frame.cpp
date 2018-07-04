@@ -441,12 +441,6 @@ void debugger_frame::WriteRegs()
 
 void debugger_frame::ShowGotoAddressDialog()
 {
-	// Look, if the CPU is null, the expression evaluator will die.
-	// So, what's the point of going to an address if you're going to die immediately?
-	if (!cpu.lock())
-	{
-		return;
-	}
 	QDialog* diag = new QDialog(this);
 	diag->setWindowTitle(tr("Enter expression"));
 	diag->setModal(true);
@@ -508,7 +502,7 @@ void debugger_frame::ShowGotoAddressDialog()
 		}
 		else
 		{
-			ulong ul_addr = m_expression_evaluator.evaluate_u64(*cpu, expression_input->text());
+			ulong ul_addr = m_expression_evaluator.evaluate_u64(cpu.get(), expression_input->text());
 			address_preview_label->setText("Address: " + QString("0x%1").arg(ul_addr, 8, 16, QChar('0')));
 		}
 	};
@@ -529,7 +523,7 @@ void debugger_frame::ShowGotoAddressDialog()
 		}
 		else
 		{
-			address = m_expression_evaluator.evaluate_u64(*cpu, expression_input->text());
+			address = m_expression_evaluator.evaluate_u64(cpu.get(), expression_input->text());
 			address_preview_label->setText(expression_input->text());
 		}
 
