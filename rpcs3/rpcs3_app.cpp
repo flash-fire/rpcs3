@@ -311,6 +311,7 @@ void rpcs3_app::InitializeConnects()
 	connect(RPCS3MainWin, &main_window::RequestGlobalStylesheetChange, this, &rpcs3_app::OnChangeStyleSheetRequest);
 
 	qRegisterMetaType <std::function<void()>>("std::function<void()>");
+	qRegisterMetaType <std::shared_ptr<named_thread>>("std::shared_ptr<named_thread>");
 	connect(this, &rpcs3_app::RequestCallAfter, this, &rpcs3_app::HandleCallAfter);
 
 	connect(this, &rpcs3_app::OnEmulatorRun, RPCS3MainWin, &main_window::OnEmuRun);

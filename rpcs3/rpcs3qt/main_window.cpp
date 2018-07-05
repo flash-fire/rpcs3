@@ -772,7 +772,6 @@ void main_window::RepaintToolBarIcons()
 void main_window::OnEmuRun()
 {
 	m_debuggerFrame->EnableButtons(true);
-	m_debuggerFrame->UpdateBreakpointList();
 
 #ifdef _WIN32
 	m_thumb_playPause->setToolTip(tr("Pause emulation"));
@@ -857,6 +856,7 @@ void main_window::OnEmuStop()
 void main_window::OnEmuReady()
 {
 	m_debuggerFrame->EnableButtons(true);
+	m_debuggerFrame->UpdateBreakpointList();
 #ifdef _WIN32
 	m_thumb_playPause->setToolTip(Emu.IsReady() ? tr("Start emulation") : tr("Resume emulation"));
 	m_thumb_playPause->setIcon(m_icon_thumb_play);

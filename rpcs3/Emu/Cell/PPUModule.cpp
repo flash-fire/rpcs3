@@ -1476,6 +1476,7 @@ void ppu_load_exec(const ppu_exec_object& elf)
 
 	// Initialize main thread
 	auto ppu = idm::make_ptr<ppu_thread>("main_thread", primary_prio, primary_stacksize);
+	Emu.GetCallbacks().on_thread_created(ppu); // The breakpoints SHALL know about the main_thread ugh.
 
 	// Write initial data (exitspawn)
 	if (Emu.data.size())

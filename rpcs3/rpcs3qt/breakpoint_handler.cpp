@@ -101,11 +101,13 @@ void breakpoint_handler::RemoveBreakpoint(u32 addr)
 */
 void breakpoint_handler::AddCompatibleHWBreakpoints(const named_thread* thrd)
 {
+	std::string targ_name = thrd->get_name();
 	for (int i = m_ser_hw_breakpoints.size() - 1; i >= 0; --i)
 	{
 		serialized_hw_breakpoint& breakpoint = m_ser_hw_breakpoints[i];
-		if (thrd->get_name() == breakpoint.m_thread_name)
+		if (targ_name == breakpoint.m_thread_name)
 		{
+			LOG_SUCCESS(GENERAL, "Successfully readded hw_breakpoint to thread %s at address 0x%x", targ_name, breakpoint.m_address);
 			AddHWBreakpointInternal(thrd, breakpoint.m_address, breakpoint.m_type, GetHWBreakpointType(breakpoint.m_type), breakpoint.m_size, breakpoint.m_ui_name);
 			m_ser_hw_breakpoints.remove(i);
 		}
@@ -114,14 +116,14 @@ void breakpoint_handler::AddCompatibleHWBreakpoints(const named_thread* thrd)
 
 void breakpoint_handler::test(const named_thread* thrd)
 {
-	u32 addr;
+	/*u32 addr;
 
 	if (Emu.GetTitleID().empty())
 		addr = 0x20200000;
 	else
 		addr = 0x20499998; // TOCS 2
 
-	AddHWBreakpoint(thrd, addr, hw_breakpoint_type::read_write, hw_breakpoint_size::size_4, "test");
+	//AddHWBreakpoint(thrd, addr, hw_breakpoint_type::read_write, hw_breakpoint_size::size_4, "test");*/
 }
 
 void breakpoint_handler::UpdateGameID()
@@ -199,7 +201,6 @@ void breakpoint_handler::AddHWBreakpointInternal(const named_thread* thread, u32
 
 hw_breakpoint_type breakpoint_handler::GetHWBreakpointType(breakpoint_type type)
 {
-	LOG_NOTICE(PPU, "gethwbreakpointtype");
 	hw_breakpoint_type hw_type;
 	switch (type)
 	{
